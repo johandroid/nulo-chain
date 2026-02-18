@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use parachain_template_runtime::{opaque::Block, AccountId, Balance, Nonce};
+use nulo_chain::{AccountId, Balance, Nonce, opaque::Block};
 
 use polkadot_sdk::*;
 

@@ -1,9 +1,9 @@
 [workspace.package]
 license = "MIT-0"
-authors = ["Parity Technologies <admin@parity.io>"]
-homepage = "https://paritytech.github.io/polkadot-sdk/"
-repository = "https://github.com/paritytech/polkadot-sdk-parachain-template.git"
-edition = "2021"
+authors = ["Johan Alexis Duque Cadena <https://t.me/JohanDroid>"]
+homepage = "https://johandroid.com"
+repository = "https://github.com/johandroid/nulo-chain"
+edition = "2024"
 
 [workspace]
 default-members = ["pallets/template", "runtime"]
@@ -50,7 +50,7 @@ while_immutable_condition = { level = "allow", priority = 2 }        # false pos
 zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_000
 
 [workspace.dependencies]
-parachain-template-runtime = { path = "./runtime", default-features = false }
+nulo_chain = { path = "./runtime", default-features = false }
 pallet-parachain-template = { path = "./pallets/template", default-features = false }
 clap = { version = "4.5.13" }
 codec = { version = "3.7.5", default-features = false, package = "parity-scale-codec" }

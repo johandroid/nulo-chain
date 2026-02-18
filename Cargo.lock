@@ -8063,6 +8063,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "nulo_chain"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-parachain-system",
+ "docify",
+ "hex-literal",
+ "log",
+ "pallet-parachain-template",
+ "parity-scale-codec",
+ "polkadot-sdk",
+ "scale-info",
+ "serde_json",
+ "smallvec",
+ "substrate-wasm-builder",
+]
+
+[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10589,28 +10606,11 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "log",
- "parachain-template-runtime",
+ "nulo_chain",
  "parity-scale-codec",
  "polkadot-sdk",
  "serde",
  "substrate-prometheus-endpoint",
-]
-
-[[package]]
-name = "parachain-template-runtime"
-version = "0.1.0"
-dependencies = [
- "cumulus-pallet-parachain-system",
- "docify",
- "hex-literal",
- "log",
- "pallet-parachain-template",
- "parity-scale-codec",
- "polkadot-sdk",
- "scale-info",
- "serde_json",
- "smallvec",
- "substrate-wasm-builder",
 ]
 
 [[package]]

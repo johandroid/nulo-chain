@@ -1,6 +1,6 @@
 <div align="center">
 
-# Polkadot SDK's Parachain Template
+# NULO CHAIN
 
 <img height="70px" alt="Polkadot SDK Logo" src="https://github.com/paritytech/polkadot-sdk/raw/master/docs/images/Polkadot_Logo_Horizontal_Pink_White.png#gh-dark-mode-only"/>
 <img height="70px" alt="Polkadot SDK Logo" src="https://github.com/paritytech/polkadot-sdk/raw/master/docs/images/Polkadot_Logo_Horizontal_Pink_Black.png#gh-light-mode-only"/>
@@ -78,7 +78,7 @@ and referenced throughout the contents of this file as `{{PARACHAIN_ID}}`. Pleas
 any command or file referencing this placeholder with the value of the `PARACHAIN_ID` constant:
 
 ```rust,ignore
-pub const PARACHAIN_ID: u32 = 1000;
+pub const PARACHAIN_ID: u32 = 5134;
 ```
 
 ### Omni Node Prerequisites
@@ -125,7 +125,7 @@ Start Omni Node with the generated chain spec. We'll start it in development mod
 and finalizing blocks based on manual seal, configured below to seal a block with each second.
 
 ```bash
-polkadot-omni-node --chain <path/to/chain_spec.json> --dev --dev-block-time 1000
+polkadot-omni-node --chain <path/to/chain_spec.json> --dev --dev-block-time 5134
 ```
 
 However, such a setup is not close to what would run in production, and for that we need to setup a local

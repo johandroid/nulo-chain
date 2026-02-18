@@ -1,6 +1,6 @@
 use crate::{
-    AccountId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig, PolkadotXcmConfig,
-    RuntimeGenesisConfig, SessionConfig, SessionKeys, SudoConfig, EXISTENTIAL_DEPOSIT,
+    AccountId, BalancesConfig, CollatorSelectionConfig, EXISTENTIAL_DEPOSIT, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, SudoConfig,
 };
 
 use alloc::{vec, vec::Vec};
@@ -18,7 +18,7 @@ use sp_keyring::Sr25519Keyring;
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 /// Parachain id used for genesis config presets of parachain template.
 #[docify::export_content]
-pub const PARACHAIN_ID: u32 = 1000;
+pub const PARACHAIN_ID: u32 = 5134;
 
 /// Generate the session keys from individual elements.
 ///

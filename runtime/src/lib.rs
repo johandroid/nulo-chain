@@ -20,9 +20,8 @@ use smallvec::smallvec;
 use polkadot_sdk::{staging_parachain_info as parachain_info, *};
 
 use sp_runtime::{
-    generic, impl_opaque_keys,
+    MultiSignature, generic, impl_opaque_keys,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
-    MultiSignature,
 };
 
 #[cfg(feature = "std")]
@@ -30,8 +29,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::weights::{
-    constants::WEIGHT_REF_TIME_PER_SECOND, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-    WeightToFeePolynomial,
+    Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 pub use genesis_config_presets::PARACHAIN_ID;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -161,8 +160,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: alloc::borrow::Cow::Borrowed("parachain-template-runtime"),
-    impl_name: alloc::borrow::Cow::Borrowed("parachain-template-runtime"),
+    spec_name: alloc::borrow::Cow::Borrowed("nulo_chain"),
+    impl_name: alloc::borrow::Cow::Borrowed("nulo_chain"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 0,
