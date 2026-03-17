@@ -1,1 +1,3 @@
 target/
+chain_spec.json
+dev_chain_spec.json

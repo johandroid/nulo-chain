@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use nulo_chain::{AccountId, Balance, Nonce, opaque::Block};
+use nulo_chain::{opaque::Block, AccountId, Balance, Nonce};
 
 use polkadot_sdk::*;
 

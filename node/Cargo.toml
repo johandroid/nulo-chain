@@ -1,5 +1,5 @@
 [package]
-name = "parachain-template-node"
+name = "nulo-node"
 description = "A parachain node template built with Substrate and Cumulus, part of Polkadot Sdk."
 version = "0.1.0"
 license = "Unlicense"
@@ -21,7 +21,7 @@ docify = { workspace = true }
 futures = { workspace = true }
 jsonrpsee = { features = ["server"], workspace = true }
 log = { workspace = true, default-features = true }
-nulo_chain.workspace = true
+nulo-chain.workspace = true
 polkadot-sdk = { workspace = true, features = ["node", "polkadot-primitives"] }
 prometheus-endpoint.default-features = true
 prometheus-endpoint.workspace = true
@@ -32,16 +32,12 @@ polkadot-sdk = { workspace = true, features = ["substrate-build-script-utils"] }
 
 [features]
 default = ["std"]
-std = [
-	"log/std",
-	"nulo_chain/std",
-	"polkadot-sdk/std",
-]
+std = ["log/std", "nulo-chain/std", "polkadot-sdk/std"]
 runtime-benchmarks = [
-	"nulo_chain/runtime-benchmarks",
+	"nulo-chain/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
 ]
 try-runtime = [
-	"nulo_chain/try-runtime",
+	"nulo-chain/try-runtime",
 	"polkadot-sdk/try-runtime",
 ]

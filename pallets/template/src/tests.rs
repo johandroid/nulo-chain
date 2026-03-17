@@ -1,4 +1,4 @@
-use crate::{Error, Something, mock::*};
+use crate::{mock::*, Error, Something};
 use frame::testing_prelude::*;
 
 #[test]

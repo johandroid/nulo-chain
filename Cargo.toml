@@ -50,8 +50,8 @@ while_immutable_condition = { level = "allow", priority = 2 }        # false pos
 zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_000
 
 [workspace.dependencies]
-nulo_chain = { path = "./runtime", default-features = false }
-pallet-parachain-template = { path = "./pallets/template", default-features = false }
+nulo-chain = { path = "./runtime", default-features = false }
+pallet-nulo-template = { path = "./pallets/template", default-features = false }
 clap = { version = "4.5.13" }
 codec = { version = "3.7.5", default-features = false, package = "parity-scale-codec" }
 color-print = { version = "0.3.4" }
@@ -59,7 +59,7 @@ docify = { version = "0.2.9" }
 futures = { version = "0.3.31" }
 jsonrpsee = { version = "0.24.10" }
 log = { version = "0.4.22", default-features = false }
-polkadot-sdk = { version = "2512.1.0", default-features = false }
+polkadot-sdk = { version = "2512.3.3", default-features = false }
 prometheus-endpoint = { version = "0.17.7", default-features = false, package = "substrate-prometheus-endpoint" }
 serde = { version = "1.0.214", default-features = false }
 cumulus-pallet-parachain-system = { version = "0.25.0", default-features = false }

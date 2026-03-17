@@ -33,22 +33,23 @@ use polkadot_sdk::{staging_xcm_builder as xcm_builder, staging_xcm_executor as x
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
-    PalletId, derive_impl,
+    derive_impl,
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstBool, ConstU8, ConstU32, ConstU64, EitherOfDiverse, TransformOrigin, VariantCountOf,
+        ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, TransformOrigin, VariantCountOf,
     },
     weights::{ConstantMultiplier, Weight},
+    PalletId,
 };
 use frame_system::{
-    EnsureRoot,
     limits::{BlockLength, BlockWeights},
+    EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_runtime_common::{
-    BlockHashCount, SlowAdjustingFeeUpdate, xcm_sender::ExponentialPrice,
+    xcm_sender::ExponentialPrice, BlockHashCount, SlowAdjustingFeeUpdate,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_runtime::Perbill;
@@ -57,12 +58,12 @@ use xcm::latest::prelude::{AssetId, BodyId};
 
 // Local module imports
 use super::{
-    AVERAGE_ON_INITIALIZE_RATIO, AccountId, Aura, Balance, Balances, Block, BlockNumber, CENTS,
-    CollatorSelection, ConsensusHook, EXISTENTIAL_DEPOSIT, HOURS, Hash, MAXIMUM_BLOCK_WEIGHT,
-    MICRO_UNIT, MessageQueue, NORMAL_DISPATCH_RATIO, Nonce, PalletInfo, ParachainSystem, Runtime,
-    RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask,
-    SLOT_DURATION, Session, SessionKeys, System, VERSION, WeightToFee, XcmpQueue,
     weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
+    AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
+    MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
+    RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
+    System, WeightToFee, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, CENTS, EXISTENTIAL_DEPOSIT, HOURS,
+    MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -308,7 +309,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<100_000>;
     type AllowMultipleBlocksPerSlot = ConstBool<true>;
-    type SlotDuration = ConstU64<SLOT_DURATION>;
+    type SlotDuration = ConstU64<{ SLOT_DURATION }>;
 }
 
 parameter_types! {
@@ -341,7 +342,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 /// Configure the pallet template in pallets/template.
-impl pallet_parachain_template::Config for Runtime {
+impl pallet_nulo_template::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_parachain_template::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_nulo_template::weights::SubstrateWeight<Runtime>;
 }

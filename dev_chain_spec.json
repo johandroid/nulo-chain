@@ -1,6 +1,6 @@
 {
-  "name": "Custom",
-  "id": "custom",
+  "name": "nulo-chain",
+  "id": "nulo",
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": null,

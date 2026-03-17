@@ -47,7 +47,7 @@ jobs:
 
       - uses: ./.github/actions/ubuntu-dependencies
 
-      - name: Build the template
+      - name: Build Nulo Chain
         run: SKIP_PALLET_REVIVE_FIXTURES=1 cargo build --workspace --all-features --locked --profile production
         timeout-minutes: 90
 
@@ -55,5 +55,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            target/production/parachain-template-node
-            target/production/wbuild/parachain-template-runtime/parachain_template_runtime.compact.compressed.wasm
+            target/production/nulo-node
+            target/production/wbuild/nulo-chain/nulo_chain.compact.compressed.wasm

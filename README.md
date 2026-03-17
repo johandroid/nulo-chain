@@ -5,9 +5,9 @@
 <img height="70px" alt="Polkadot SDK Logo" src="https://github.com/paritytech/polkadot-sdk/raw/master/docs/images/Polkadot_Logo_Horizontal_Pink_White.png#gh-dark-mode-only"/>
 <img height="70px" alt="Polkadot SDK Logo" src="https://github.com/paritytech/polkadot-sdk/raw/master/docs/images/Polkadot_Logo_Horizontal_Pink_Black.png#gh-light-mode-only"/>
 
-> This is a template for creating a [parachain](https://wiki.polkadot.network/docs/learn-parachains) based on Polkadot SDK.
+> Nulo Chain is a [parachain](https://wiki.polkadot.network/docs/learn-parachains) based on Polkadot SDK.
 >
-> This template is automatically updated after releases in the main [Polkadot SDK monorepo](https://github.com/paritytech/polkadot-sdk).
+> It is derived from the upstream parachain template in the main [Polkadot SDK monorepo](https://github.com/paritytech/polkadot-sdk).
 
 </div>
 
@@ -15,7 +15,7 @@
 
 - [Intro](#intro)
 
-- [Template Structure](#template-structure)
+- [Project Structure](#project-structure)
 
 - [Getting Started](#getting-started)
 
@@ -23,7 +23,7 @@
 
   - [Omni Node](#omni-node-prerequisites)
   - [Zombienet setup with Omni Node](#zombienet-setup-with-omni-node)
-  - [Parachain Template Node](#parachain-template-node)
+  - [Nulo Node](#nulo-node)
   - [Connect with the Polkadot-JS Apps Front-End](#connect-with-the-polkadot-js-apps-front-end)
   - [Takeaways](#takeaways)
 
@@ -33,7 +33,7 @@
 
 ## Intro
 
-- ⏫ This template provides a starting point to build a [parachain](https://wiki.polkadot.network/docs/learn-parachains).
+- ⏫ This project provides a starting point to build a [parachain](https://wiki.polkadot.network/docs/learn-parachains).
 
 - ☁️ It is based on the
   [Cumulus](https://paritytech.github.io/polkadot-sdk/master/polkadot_sdk_docs/polkadot_sdk/cumulus/index.html) framework.
@@ -43,7 +43,7 @@
 
 - 👉 Learn more about parachains [here](https://wiki.polkadot.network/docs/learn-parachains)
 
-## Template Structure
+## Project Structure
 
 A Polkadot SDK based project such as this one consists of:
 
@@ -55,36 +55,36 @@ A Polkadot SDK based project such as this one consists of:
 
 ## Getting Started
 
-- 🦀 The template is using the Rust language.
+- 🦀 This project uses Rust.
 
 - 👉 Check the
   [Rust installation instructions](https://www.rust-lang.org/tools/install) for your system.
 
 - 🛠️ Depending on your operating system and Rust version, there might be additional
-  packages required to compile this template - please take note of the Rust compiler output.
+  packages required to compile this project - please take note of the Rust compiler output.
 
-Fetch parachain template code:
+Fetch Nulo Chain code:
 
 ```sh
-git clone https://github.com/paritytech/polkadot-sdk-parachain-template.git parachain-template
+git clone https://github.com/johandroid/nulo-chain.git nulo-chain
 
-cd parachain-template
+cd nulo-chain
 ```
 
 ## Starting a Development Chain
 
-The parachain template relies on a hardcoded parachain id which is defined in the runtime code
+Nulo Chain relies on a hardcoded parachain id which is defined in the runtime code
 and referenced throughout the contents of this file as `{{PARACHAIN_ID}}`. Please replace
 any command or file referencing this placeholder with the value of the `PARACHAIN_ID` constant:
 
 ```rust,ignore
-pub const PARACHAIN_ID: u32 = 5134;
+pub const PARACHAIN_ID: u32 = 5153;
 ```
 
 ### Omni Node Prerequisites
 
 [Omni Node](https://paritytech.github.io/polkadot-sdk/master/polkadot_sdk_docs/reference_docs/omni_node/index.html) can
-be used to run the parachain template's runtime. `polkadot-omni-node` binary crate usage is described at a high-level
+be used to run Nulo Chain's runtime. `polkadot-omni-node` binary crate usage is described at a high-level
 [on crates.io](https://crates.io/crates/polkadot-omni-node).
 
 #### Install `polkadot-omni-node`
@@ -95,7 +95,7 @@ cargo install polkadot-omni-node
 
 > For more advanced options, please see the installation section at [`crates.io/omni-node`](https://crates.io/crates/polkadot-omni-node).
 
-#### Build `parachain-template-runtime`
+#### Build the `nulo-chain` runtime
 
 ```sh
 cargo build --profile production
@@ -113,11 +113,11 @@ cargo install staging-chain-spec-builder
 
 ```sh
 chain-spec-builder create --relay-chain "rococo-local" --runtime \
-    target/release/wbuild/parachain-template-runtime/parachain_template_runtime.wasm named-preset development
+    target/release/wbuild/nulo-chain/nulo_chain.wasm named-preset development
 ```
 
 **Note**: the `relay-chain` flag is required by Omni Node. The `relay-chain` value is set in accordance
-with the relay chain ID where this instantiation of parachain-template will connect to.
+with the relay chain ID where this instantiation of Nulo Chain will connect to.
 
 #### Run Omni Node
 
@@ -125,7 +125,7 @@ Start Omni Node with the generated chain spec. We'll start it in development mod
 and finalizing blocks based on manual seal, configured below to seal a block with each second.
 
 ```bash
-polkadot-omni-node --chain <path/to/chain_spec.json> --dev --dev-block-time 5134
+polkadot-omni-node --chain <path/to/chain_spec.json> --dev --dev-block-time 5153
 ```
 
 However, such a setup is not close to what would run in production, and for that we need to setup a local
@@ -151,9 +151,9 @@ export PATH="$PATH:<path/to/binaries>"
 
 #### Update `zombienet-omni-node.toml` with a valid chain spec path
 
-To simplify the process of using the parachain-template with zombienet and Omni Node, we've added a pre-configured
-development chain spec (dev_chain_spec.json) to the parachain template. The zombienet-omni-node.toml file of this
-template points to it, but you can update it to an updated chain spec generated on your machine. To generate a
+To simplify the process of using Nulo Chain with zombienet and Omni Node, we've added a pre-configured
+development chain spec (dev_chain_spec.json) to Nulo Chain. The `zombienet-omni-node.toml` file in this
+repository points to it, but you can update it to a newer chain spec generated on your machine. To generate a
 chain spec refer to [staging-chain-spec-builder](https://crates.io/crates/staging-chain-spec-builder)
 
 Then make the changes in the network specification like so:
@@ -172,12 +172,12 @@ chain_spec_path = "<TO BE UPDATED WITH A VALID PATH>"
 zombienet --provider native spawn zombienet-omni-node.toml
 ```
 
-### Parachain Template Node
+### Nulo Node
 
-As mentioned in the `Template Structure` section, the `node` crate is optionally compiled and it is an alternative
+As mentioned in the `Project Structure` section, the `node` crate is optionally compiled and it is an alternative
 to `Omni Node`. Similarly, it requires setting up a relay chain, and we'll use `zombienet` once more.
 
-#### Install the `parachain-template-node`
+#### Install the `nulo-node`
 
 ```sh
 cargo install --path node --locked
@@ -227,12 +227,12 @@ To use `chopsticks`, please install the latest version according to the installa
 
 ### Build a raw chain spec
 
-Build the `parachain-template-runtime` as mentioned before in this guide and use `chain-spec-builder`
+Build the `nulo-chain` runtime as mentioned before in this guide and use `chain-spec-builder`
 again but this time by passing `--raw-storage` flag:
 
 ```sh
 chain-spec-builder create --raw-storage --relay-chain "rococo-local" --runtime \
-    target/release/wbuild/parachain-template-runtime/parachain_template_runtime.wasm named-preset development
+    target/release/wbuild/nulo-chain/nulo_chain.wasm named-preset development
 ```
 
 ### Start `chopsticks` with the chain spec
@@ -243,15 +243,15 @@ npx @acala-network/chopsticks@latest --chain-spec <path/to/chain_spec.json>
 
 ### Alternatives
 
-`OmniNode` can be still used for runtime development if using the `--dev` flag, while `parachain-template-node` doesn't
+`OmniNode` can be still used for runtime development if using the `--dev` flag, while `nulo-node` doesn't
 support it at this moment. It can still be used to test a runtime in a full setup where it is started alongside a
-relay chain network (see [Parachain Template node](#parachain-template-node) setup).
+relay chain network (see [Nulo Node](#nulo-node) setup).
 
 ## Contributing
 
-- 🔄 This template is automatically updated after releases in the main [Polkadot SDK monorepo](https://github.com/paritytech/polkadot-sdk).
+- 🔄 Nulo Chain is based on the upstream parachain template in the main [Polkadot SDK monorepo](https://github.com/paritytech/polkadot-sdk).
 
-- ➡️ Any pull requests should be directed to this [source](https://github.com/paritytech/polkadot-sdk/tree/master/templates/parachain).
+- ➡️ Open pull requests against this repository: [johandroid/nulo-chain](https://github.com/johandroid/nulo-chain).
 
 - 😇 Please refer to the monorepo's
   [contribution guidelines](https://github.com/paritytech/polkadot-sdk/blob/master/docs/contributor/CONTRIBUTING.md) and
