@@ -19,9 +19,13 @@ codec = { workspace = true, default-features = true }
 color-print = { workspace = true }
 docify = { workspace = true }
 futures = { workspace = true }
+ismp-parachain-inherent = { workspace = true }
+ismp-parachain-runtime-api = { workspace = true }
 jsonrpsee = { features = ["server"], workspace = true }
 log = { workspace = true, default-features = true }
 nulo-chain.workspace = true
+pallet-ismp-rpc = { workspace = true }
+pallet-ismp-runtime-api = { workspace = true }
 polkadot-sdk = { workspace = true, features = ["node", "polkadot-primitives"] }
 prometheus-endpoint.default-features = true
 prometheus-endpoint.workspace = true

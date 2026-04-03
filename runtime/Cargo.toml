@@ -16,12 +16,21 @@ targets = ["x86_64-unknown-linux-gnu"]
 workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
 codec = { features = ["derive"], workspace = true }
 cumulus-pallet-parachain-system.workspace = true
 docify = { workspace = true }
 hex-literal = { optional = true, workspace = true, default-features = true }
+ismp = { workspace = true }
+ismp-parachain = { workspace = true }
+ismp-parachain-runtime-api = { workspace = true }
 log = { workspace = true }
+pallet-ismp = { workspace = true }
+pallet-hyperbridge = { workspace = true }
+pallet-ismp-runtime-api = { workspace = true }
+pallet-token-gateway = { workspace = true }
 pallet-nulo-template = { workspace = true }
+
 polkadot-sdk = { workspace = true, features = [
 	"assets-common",
 	"cumulus-pallet-aura-ext",
@@ -33,6 +42,7 @@ polkadot-sdk = { workspace = true, features = [
 	"cumulus-primitives-core",
 	"cumulus-primitives-utility",
 	"pallet-aura",
+	"pallet-assets",
 	"pallet-authorship",
 	"pallet-balances",
 	"pallet-collator-selection",
@@ -63,12 +73,22 @@ docify = { workspace = true }
 substrate-wasm-builder = { optional = true, workspace = true, default-features = true }
 
 [features]
-default = ["std"]
+default = ["std", "paseo-local"]
+paseo-local = []
+production = []
 std = [
+	"anyhow/std",
 	"codec/std",
 	"cumulus-pallet-parachain-system/std",
+	"ismp/std",
+	"ismp-parachain/std",
+	"ismp-parachain-runtime-api/std",
 	"log/std",
+	"pallet-hyperbridge/std",
+	"pallet-ismp/std",
+	"pallet-ismp-runtime-api/std",
 	"pallet-nulo-template/std",
+	"pallet-token-gateway/std",
 	"polkadot-sdk/std",
 	"scale-info/std",
 	"serde_json/std",
@@ -77,12 +97,19 @@ std = [
 runtime-benchmarks = [
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"hex-literal",
+	"ismp-parachain/runtime-benchmarks",
+	"pallet-ismp/runtime-benchmarks",
 	"pallet-nulo-template/runtime-benchmarks",
+	"pallet-token-gateway/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-parachain-system/try-runtime",
+	"ismp-parachain/try-runtime",
+	"pallet-hyperbridge/try-runtime",
+	"pallet-ismp/try-runtime",
 	"pallet-nulo-template/try-runtime",
+	"pallet-token-gateway/try-runtime",
 	"polkadot-sdk/try-runtime",
 ]
 

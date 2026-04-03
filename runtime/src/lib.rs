@@ -20,9 +20,8 @@ use smallvec::smallvec;
 use polkadot_sdk::{staging_parachain_info as parachain_info, *};
 
 use sp_runtime::{
-    generic, impl_opaque_keys,
+    MultiSignature, generic, impl_opaque_keys,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
-    MultiSignature,
 };
 
 #[cfg(feature = "std")]
@@ -30,8 +29,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::weights::{
-    constants::WEIGHT_REF_TIME_PER_SECOND, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-    WeightToFeePolynomial,
+    Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 pub use genesis_config_presets::PARACHAIN_ID;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -164,7 +163,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: alloc::borrow::Cow::Borrowed("nulo-chain"),
     impl_name: alloc::borrow::Cow::Borrowed("nulo-chain"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 2,
     impl_version: 0,
     apis: apis::RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -281,6 +280,8 @@ mod runtime {
     pub type Balances = pallet_balances;
     #[runtime::pallet_index(11)]
     pub type TransactionPayment = pallet_transaction_payment;
+    #[runtime::pallet_index(12)]
+    pub type Assets = pallet_assets;
 
     // Governance
     #[runtime::pallet_index(15)]
@@ -307,6 +308,14 @@ mod runtime {
     pub type CumulusXcm = cumulus_pallet_xcm;
     #[runtime::pallet_index(33)]
     pub type MessageQueue = pallet_message_queue;
+    #[runtime::pallet_index(34)]
+    pub type Ismp = pallet_ismp;
+    #[runtime::pallet_index(35)]
+    pub type IsmpParachain = ismp_parachain;
+    #[runtime::pallet_index(36)]
+    pub type Hyperbridge = pallet_hyperbridge;
+    #[runtime::pallet_index(37)]
+    pub type TokenGateway = pallet_token_gateway;
 
     // Template
     #[runtime::pallet_index(50)]

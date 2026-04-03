@@ -13,21 +13,21 @@ use codec::Encode;
 use polkadot_sdk::{cumulus_client_service::ParachainTracingExecuteBlock, *};
 
 // Cumulus Imports
-use cumulus_client_bootnodes::{start_bootnode_tasks, StartBootnodeTasksParams};
+use cumulus_client_bootnodes::{StartBootnodeTasksParams, start_bootnode_tasks};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_collator::service::CollatorService;
 #[docify::export(lookahead_collator)]
 use cumulus_client_consensus_aura::collators::lookahead::{self as aura, Params as AuraParams};
 use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
 use cumulus_client_service::{
-    build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
     BuildNetworkParams, CollatorSybilResistance, DARecoveryProfile, ParachainHostFunctions,
-    StartRelayChainTasksParams,
+    StartRelayChainTasksParams, build_network, build_relay_chain_interface, prepare_node_config,
+    start_relay_chain_tasks,
 };
 #[docify::export(cumulus_primitives)]
 use cumulus_primitives_core::{
-    relay_chain::{CollatorPair, ValidationCode},
     GetParachainInfo, ParaId,
+    relay_chain::{CollatorPair, ValidationCode},
 };
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainInterface};
 
@@ -37,7 +37,7 @@ use polkadot_sdk::sc_network::PeerId;
 use prometheus_endpoint::Registry;
 use sc_client_api::Backend;
 use sc_consensus::ImportQueue;
-use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
+use sc_executor::{DEFAULT_HEAP_ALLOC_STRATEGY, HeapAllocStrategy, WasmExecutor};
 use sc_network::{NetworkBackend, NetworkBlock};
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -210,8 +210,23 @@ fn start_consensus(
         client.clone(),
     );
 
+    let (client_clone, relay_chain_interface_clone) =
+        (client.clone(), relay_chain_interface.clone());
     let params = AuraParams {
-        create_inherent_data_providers: move |_, ()| async move { Ok(()) },
+        create_inherent_data_providers: move |parent, ()| {
+            let client = client_clone.clone();
+            let relay_chain_interface = relay_chain_interface_clone.clone();
+
+            async move {
+                ismp_parachain_inherent::ConsensusInherentProvider::create(
+                    parent,
+                    client,
+                    relay_chain_interface,
+                )
+                .await
+                .map_err(Into::into)
+            }
+        },
         block_import,
         para_client: client.clone(),
         para_backend: backend,
@@ -352,12 +367,14 @@ pub async fn start_parachain_node(
 
     let rpc_builder = {
         let client = client.clone();
+        let backend = backend.clone();
         let transaction_pool = transaction_pool.clone();
 
         Box::new(move |_| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
+                backend: backend.clone(),
             };
 
             crate::rpc::create_full(deps).map_err(Into::into)
@@ -388,9 +405,9 @@ pub async fn start_parachain_node(
         match SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench, false) {
             Err(err) if validator => {
                 log::warn!(
-				"⚠️  The hardware does not meet the minimal requirements {} for role 'Authority'.",
-				err
-			);
+                    "⚠️  The hardware does not meet the minimal requirements {} for role 'Authority'.",
+                    err
+                );
             }
             _ => {}
         }

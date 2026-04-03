@@ -26,6 +26,11 @@
 // External crates imports
 use alloc::vec::Vec;
 
+use ismp::{
+    consensus::{ConsensusClientId, StateMachineHeight, StateMachineId},
+    host::StateMachine,
+    router::{Request, Response},
+};
 use polkadot_sdk::{staging_parachain_info as parachain_info, *};
 
 use cumulus_primitives_core::ParaId;
@@ -36,19 +41,19 @@ use frame_support::{
 use pallet_aura::Authorities;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{OpaqueMetadata, crypto::KeyTypeId};
 use sp_runtime::{
+    ApplyExtrinsicResult,
     traits::Block as BlockT,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
 };
 use sp_version::RuntimeVersion;
 
 // Local module imports
 use super::{
-    AccountId, Balance, Block, ConsensusHook, Executive, InherentDataExt, Nonce, ParachainSystem,
-    Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System, TransactionPayment,
-    SLOT_DURATION, VERSION,
+    AccountId, Balance, Block, ConsensusHook, Executive, Hash, InherentDataExt, Ismp,
+    IsmpParachain, Nonce, ParachainSystem, Runtime, RuntimeCall, RuntimeGenesisConfig,
+    SLOT_DURATION, SessionKeys, System, TransactionPayment, VERSION,
 };
 
 // we move some impls outside so we can easily use them with `docify`.
@@ -229,6 +234,54 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
+        }
+    }
+
+    impl pallet_ismp_runtime_api::IsmpRuntimeApi<Block, Hash> for Runtime {
+        fn host_state_machine() -> StateMachine {
+            <Runtime as pallet_ismp::Config>::HostStateMachine::get()
+        }
+
+        fn block_events() -> Vec<ismp::events::Event> {
+            Ismp::block_events()
+        }
+
+        fn block_events_with_metadata() -> Vec<(ismp::events::Event, Option<u32>)> {
+            Ismp::block_events_with_metadata()
+        }
+
+        fn consensus_state(id: ConsensusClientId) -> Option<Vec<u8>> {
+            Ismp::consensus_states(id)
+        }
+
+        fn state_machine_update_time(id: StateMachineHeight) -> Option<u64> {
+            Ismp::state_machine_update_time(id)
+        }
+
+        fn challenge_period(id: StateMachineId) -> Option<u64> {
+            Ismp::challenge_period(id)
+        }
+
+        fn latest_state_machine_height(id: StateMachineId) -> Option<u64> {
+            Ismp::latest_state_machine_height(id)
+        }
+
+        fn requests(request_commitments: Vec<sp_core::H256>) -> Vec<Request> {
+            Ismp::requests(request_commitments)
+        }
+
+        fn responses(response_commitments: Vec<sp_core::H256>) -> Vec<Response> {
+            Ismp::responses(response_commitments)
+        }
+    }
+
+    impl ismp_parachain_runtime_api::IsmpParachainApi<Block> for Runtime {
+        fn para_ids() -> Vec<u32> {
+            IsmpParachain::para_ids()
+        }
+
+        fn current_relay_chain_state() -> cumulus_pallet_parachain_system::RelayChainState {
+            IsmpParachain::current_relay_chain_state()
         }
     }
 

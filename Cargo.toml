@@ -52,6 +52,7 @@ zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_0
 [workspace.dependencies]
 nulo-chain = { path = "./runtime", default-features = false }
 pallet-nulo-template = { path = "./pallets/template", default-features = false }
+anyhow = { version = "1.0", default-features = false }
 clap = { version = "4.5.13" }
 codec = { version = "3.7.5", default-features = false, package = "parity-scale-codec" }
 color-print = { version = "0.3.4" }
@@ -69,6 +70,17 @@ serde_json = { version = "1.0.132", default-features = false }
 smallvec = { version = "1.11.0", default-features = false }
 substrate-wasm-builder = { version = "31.1.0", default-features = false }
 frame = { version = "0.14.0", default-features = false, package = "polkadot-sdk-frame" }
+
+# Hyperbridge
+ismp = { version = "2512.0.0", default-features = false }
+pallet-ismp = { version = "2512.0.0", default-features = false }
+ismp-parachain = { version = "2512.0.0", default-features = false }
+ismp-parachain-inherent = { version = "2512.0.0", default-features = false }
+ismp-parachain-runtime-api = { version = "2512.0.0", default-features = false }
+pallet-hyperbridge = { version = "2512.0.0", default-features = false }
+pallet-ismp-rpc = { version = "2512.0.0", default-features = false }
+pallet-ismp-runtime-api = { version = "2512.0.0", default-features = false }
+pallet-token-gateway = { version = "2512.0.0", default-features = false }
 
 [profile.release]
 opt-level = 3

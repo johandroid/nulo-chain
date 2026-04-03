@@ -25,6 +25,11 @@
 
 mod xcm_config;
 
+use alloc::{boxed::Box, vec::Vec};
+
+use anyhow::anyhow;
+use ismp::{host::StateMachine, module::IsmpModule, router::IsmpRouter};
+use pallet_ismp::fee_handler::WeightFeeHandler;
 use polkadot_sdk::{staging_parachain_info as parachain_info, staging_xcm as xcm, *};
 #[cfg(not(feature = "runtime-benchmarks"))]
 use polkadot_sdk::{staging_xcm_builder as xcm_builder, staging_xcm_executor as xcm_executor};
@@ -33,37 +38,38 @@ use polkadot_sdk::{staging_xcm_builder as xcm_builder, staging_xcm_executor as x
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
-    derive_impl,
+    PalletId, derive_impl,
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, TransformOrigin, VariantCountOf,
+        ConstBool, ConstU8, ConstU32, ConstU64, EitherOfDiverse, Get, TransformOrigin, TypedGet,
+        VariantCountOf,
     },
     weights::{ConstantMultiplier, Weight},
-    PalletId,
 };
 use frame_system::{
+    EnsureRoot, EnsureRootWithSuccess,
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_runtime_common::{
-    xcm_sender::ExponentialPrice, BlockHashCount, SlowAdjustingFeeUpdate,
+    BlockHashCount, SlowAdjustingFeeUpdate, xcm_sender::ExponentialPrice,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, traits::AccountIdConversion};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::{AssetId, BodyId};
 
 // Local module imports
 use super::{
+    AVERAGE_ON_INITIALIZE_RATIO, AccountId, Assets, Aura, Balance, Balances, Block, BlockNumber,
+    CENTS, CollatorSelection, ConsensusHook, EXISTENTIAL_DEPOSIT, HOURS, Hash, Hyperbridge, Ismp,
+    IsmpParachain, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, MessageQueue, NORMAL_DISPATCH_RATIO, Nonce,
+    PARACHAIN_ID, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
+    RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, SLOT_DURATION, Session,
+    SessionKeys, System, Timestamp, TokenGateway, VERSION, WeightToFee, XcmpQueue,
     weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
-    AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
-    MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
-    RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-    System, WeightToFee, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, CENTS, EXISTENTIAL_DEPOSIT, HOURS,
-    MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -175,6 +181,61 @@ impl pallet_balances::Config for Runtime {
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxFreezes = VariantCountOf<RuntimeFreezeReason>;
     type DoneSlashHandler = ();
+}
+
+parameter_types! {
+    pub const AssetDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
+    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetsStringLimit: u32 = 50;
+    pub const RemoveItemsLimit: u32 = 1_000;
+    pub const NativeAssetId: u32 = 0;
+    pub const TokenGatewayDecimals: u8 = 12;
+    pub const AssetAdminPalletId: PalletId = PalletId(*b"tgadmin!");
+    pub const IsmpFeesPalletId: PalletId = PalletId(*b"ismpfees");
+}
+
+pub struct AssetAdmin;
+
+impl Get<AccountId> for AssetAdmin {
+    fn get() -> AccountId {
+        AssetAdminPalletId::get().into_account_truncating()
+    }
+}
+
+impl TypedGet for AssetAdmin {
+    type Type = AccountId;
+
+    fn get() -> Self::Type {
+        <Self as Get<AccountId>>::get()
+    }
+}
+
+impl pallet_assets::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type RemoveItemsLimit = RemoveItemsLimit;
+    type AssetId = u32;
+    type AssetIdParameter = u32;
+    type ReserveData = ();
+    type Currency = Balances;
+    type CreateOrigin = EnsureRootWithSuccess<AccountId, AssetAdmin>;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type AssetDeposit = AssetDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = AssetsStringLimit;
+    type Freezer = ();
+    type Holder = ();
+    type Extra = ();
+    type CallbackHandle = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -345,4 +406,84 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_nulo_template::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_nulo_template::weights::SubstrateWeight<Runtime>;
+}
+
+const HYPERBRIDGE_PASEO_PARA_ID: u32 = 4_009;
+
+parameter_types! {
+    pub const Coprocessor: Option<StateMachine> =
+        Some(StateMachine::Kusama(HYPERBRIDGE_PASEO_PARA_ID));
+    pub const HostStateMachine: StateMachine = StateMachine::Kusama(PARACHAIN_ID);
+}
+
+#[derive(Default)]
+pub struct Router;
+
+impl IsmpRouter for Router {
+    fn module_for_id(&self, bytes: Vec<u8>) -> Result<Box<dyn IsmpModule>, anyhow::Error> {
+        match bytes.as_slice() {
+            id if id == pallet_hyperbridge::PALLET_HYPERBRIDGE_ID => {
+                Ok(Box::new(Hyperbridge::default()))
+            }
+            id if TokenGateway::is_token_gateway(id) => Ok(Box::new(TokenGateway::default())),
+            _ => Err(anyhow!(ismp::Error::ModuleNotFound(bytes))),
+        }
+    }
+}
+
+pub struct IsmpParachainWeightInfo;
+
+impl ismp_parachain::weights::WeightInfo for IsmpParachainWeightInfo {
+    fn add_parachain(n: u32) -> Weight {
+        Weight::from_parts(25_000_000, 0)
+            .saturating_add(Weight::from_parts(15_000_000, 0).saturating_mul(u64::from(n)))
+            .saturating_add(
+                RocksDbWeight::get().reads_writes(2 + (2 * u64::from(n)), 2 + (2 * u64::from(n))),
+            )
+    }
+
+    fn remove_parachain(n: u32) -> Weight {
+        Weight::from_parts(15_000_000, 0)
+            .saturating_add(Weight::from_parts(5_000_000, 0).saturating_mul(u64::from(n)))
+            .saturating_add(RocksDbWeight::get().reads_writes(1, u64::from(n)))
+    }
+
+    fn update_parachain_consensus() -> Weight {
+        Weight::from_parts(200_000_000, 0).saturating_add(RocksDbWeight::get().reads_writes(6, 6))
+    }
+}
+
+impl pallet_ismp::Config for Runtime {
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type HostStateMachine = HostStateMachine;
+    type TimestampProvider = Timestamp;
+    type Currency = Balances;
+    type Balance = Balance;
+    type Router = Router;
+    type Coprocessor = Coprocessor;
+    type ConsensusClients = (ismp_parachain::ParachainConsensusClient<Runtime, IsmpParachain>,);
+    type OffchainDB = ();
+    type FeeHandler = WeightFeeHandler<AccountId, Balances, WeightToFee, IsmpFeesPalletId, true>;
+}
+
+impl ismp_parachain::Config for Runtime {
+    type IsmpHost = Ismp;
+    type WeightInfo = IsmpParachainWeightInfo;
+    type RootOrigin = EnsureRoot<AccountId>;
+}
+
+impl pallet_hyperbridge::Config for Runtime {
+    type IsmpHost = Ismp;
+}
+
+impl pallet_token_gateway::Config for Runtime {
+    type Dispatcher = Hyperbridge;
+    type NativeCurrency = Balances;
+    type AssetAdmin = AssetAdmin;
+    type CreateOrigin = EnsureRoot<AccountId>;
+    type Assets = Assets;
+    type NativeAssetId = NativeAssetId;
+    type Decimals = TokenGatewayDecimals;
+    type EvmToSubstrate = ();
+    type WeightInfo = ();
 }
