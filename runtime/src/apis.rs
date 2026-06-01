@@ -24,6 +24,7 @@
 // For more information, please refer to <http://unlicense.org>
 
 // External crates imports
+use alloc::vec;
 use alloc::vec::Vec;
 
 use ismp::{
@@ -51,7 +52,7 @@ use sp_version::RuntimeVersion;
 
 // Local module imports
 use super::{
-    AccountId, Balance, Block, ConsensusHook, Executive, Hash, InherentDataExt, Ismp,
+    AccountId, Balance, Block, BlockNumber, ConsensusHook, Executive, Hash, InherentDataExt, Ismp,
     IsmpParachain, Nonce, ParachainSystem, Runtime, RuntimeCall, RuntimeGenesisConfig,
     SLOT_DURATION, SessionKeys, System, TransactionPayment, VERSION,
 };
@@ -72,7 +73,7 @@ impl Runtime {
     }
 }
 
-impl_runtime_apis! {
+pallet_revive::impl_runtime_apis_plus_revive_traits! { Runtime, Revive, Executive, (),
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
             Runtime::impl_slot_duration()

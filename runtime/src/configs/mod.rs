@@ -48,7 +48,7 @@ use frame_support::{
     weights::{ConstantMultiplier, Weight},
 };
 use frame_system::{
-    EnsureRoot, EnsureRootWithSuccess,
+    EnsureRoot, EnsureRootWithSuccess, EnsureSigned,
     limits::{BlockLength, BlockWeights},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
@@ -57,18 +57,19 @@ use polkadot_runtime_common::{
     BlockHashCount, SlowAdjustingFeeUpdate, xcm_sender::ExponentialPrice,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::{Perbill, traits::AccountIdConversion};
+use sp_runtime::{FixedU128, Perbill, traits::AccountIdConversion};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::{AssetId, BodyId};
 
 // Local module imports
 use super::{
     AVERAGE_ON_INITIALIZE_RATIO, AccountId, Assets, Aura, Balance, Balances, Block, BlockNumber,
-    CENTS, CollatorSelection, ConsensusHook, EXISTENTIAL_DEPOSIT, HOURS, Hash, Hyperbridge, Ismp,
-    IsmpParachain, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, MessageQueue, NORMAL_DISPATCH_RATIO, Nonce,
-    PARACHAIN_ID, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
-    RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, SLOT_DURATION, Session,
-    SessionKeys, System, Timestamp, TokenGateway, VERSION, WeightToFee, XcmpQueue,
+    CENTS, CollatorSelection, ConsensusHook, DAYS, EXISTENTIAL_DEPOSIT, HOURS, Hash,
+    HyperFungibleToken, Hyperbridge, Ismp, IsmpParachain, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT,
+    MILLI_UNIT, MessageQueue, NORMAL_DISPATCH_RATIO, Nonce, PARACHAIN_ID, PalletInfo,
+    ParachainSystem, PrepaidGas, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
+    RuntimeHoldReason, RuntimeOrigin, RuntimeTask, SLOT_DURATION, Session, SessionKeys, System,
+    Timestamp, TokenGateway, VERSION, WeightToFee, XcmpQueue,
     weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
@@ -253,10 +254,74 @@ impl pallet_transaction_payment::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const PrepaidGasPalletId: PalletId = PalletId(*b"prpgas!!");
+    pub MinPrepaidGasPurchase: Weight = ExtrinsicBaseWeight::get();
+}
+
+impl pallet_prepaid_gas::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type WeightToFee = WeightToFee;
+    type PalletId = PrepaidGasPalletId;
+    type MinPurchase = MinPrepaidGasPurchase;
+    type WeightInfo = pallet_prepaid_gas::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_gas_transaction_payment::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_gas_transaction_payment::weights::SubstrateWeight<Runtime>;
+    type GasTank = PrepaidGas;
+}
+
 impl pallet_sudo::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const ReviveDepositPerItem: Balance = 20 * CENTS;
+    pub const ReviveDepositPerByte: Balance = MILLI_UNIT;
+    pub const ReviveDepositPerChildTrieItem: Balance = ReviveDepositPerItem::get() / 100;
+    pub const ReviveCodeHashLockupDepositPercent: Perbill = Perbill::from_percent(0);
+    pub const ReviveRuntimeMemory: u32 = 128 * 1024 * 1024;
+    pub const RevivePvfMemory: u32 = 512 * 1024 * 1024;
+    pub const ReviveChainId: u64 = PARACHAIN_ID as u64;
+    pub const ReviveNativeToEthRatio: u32 = 1_000_000;
+    pub const ReviveMaxEthExtrinsicWeight: FixedU128 = FixedU128::from_rational(9, 10);
+    pub const ReviveDebugEnabled: bool = false;
+    pub const ReviveGasScale: u32 = 10;
+}
+
+impl pallet_revive::Config for Runtime {
+    type Time = Timestamp;
+    type Balance = Balance;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WeightInfo = pallet_revive::weights::SubstrateWeight<Runtime>;
+    type Precompiles = ();
+    type FindAuthor = ();
+    type DepositPerByte = ReviveDepositPerByte;
+    type DepositPerItem = ReviveDepositPerItem;
+    type DepositPerChildTrieItem = ReviveDepositPerChildTrieItem;
+    type CodeHashLockupDepositPercent = ReviveCodeHashLockupDepositPercent;
+    type AddressMapper = pallet_revive::AccountId32Mapper<Self>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type AllowEVMBytecode = ConstBool<true>;
+    type UploadOrigin = EnsureSigned<AccountId>;
+    type InstantiateOrigin = EnsureSigned<AccountId>;
+    type RuntimeMemory = ReviveRuntimeMemory;
+    type PVFMemory = RevivePvfMemory;
+    type ChainId = ReviveChainId;
+    type NativeToEthRatio = ReviveNativeToEthRatio;
+    type FeeInfo = ();
+    type MaxEthExtrinsicWeight = ReviveMaxEthExtrinsicWeight;
+    type DebugEnabled = ReviveDebugEnabled;
+    type GasScale = ReviveGasScale;
 }
 
 parameter_types! {
@@ -402,10 +467,33 @@ impl pallet_collator_selection::Config for Runtime {
     type WeightInfo = ();
 }
 
-/// Configure the pallet template in pallets/template.
-impl pallet_nulo_template::Config for Runtime {
+parameter_types! {
+    pub const SponsorshipMinAmount: Balance = EXISTENTIAL_DEPOSIT;
+    pub const SponsorshipMinRemaining: Balance = 5 * EXISTENTIAL_DEPOSIT;
+    pub const MaxTotalSponsoredBySponsor: Balance = 1_000 * EXISTENTIAL_DEPOSIT;
+    pub const MaxSponsoredAccountsBySponsor: u32 = 64;
+    pub const MaxSponsoredAmountCreatedPerBlock: Balance = 100 * EXISTENTIAL_DEPOSIT;
+    pub const MaxNewSponsorshipsCreatedPerBlock: u32 = 16;
+    pub const MaxSponsorshipLeaseDuration: BlockNumber = 7 * DAYS;
+    pub const MaxSponsorshipQueueProcessingPerBlock: u32 = 64;
+    pub const SponsorshipStorageDeposit: Balance = EXISTENTIAL_DEPOSIT;
+}
+
+impl pallet_existential_sponsorship::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_nulo_template::weights::SubstrateWeight<Runtime>;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WeightInfo = pallet_existential_sponsorship::weights::SubstrateWeight<Runtime>;
+    type MinSponsorship = SponsorshipMinAmount;
+    type SponsorMinRemaining = SponsorshipMinRemaining;
+    type MaxTotalSponsoredPerSponsor = MaxTotalSponsoredBySponsor;
+    type MaxSponsoredAccountsPerSponsor = MaxSponsoredAccountsBySponsor;
+    type MaxSponsoredAmountPerBlock = MaxSponsoredAmountCreatedPerBlock;
+    type MaxNewSponsorshipsPerBlock = MaxNewSponsorshipsCreatedPerBlock;
+    type MaxLeaseDuration = MaxSponsorshipLeaseDuration;
+    type MaxQueueProcessingPerBlock = MaxSponsorshipQueueProcessingPerBlock;
+    type SponsorshipStorageDeposit = SponsorshipStorageDeposit;
+    type ForceOrigin = EnsureRoot<AccountId>;
 }
 
 const HYPERBRIDGE_PASEO_PARA_ID: u32 = 4_009;
@@ -425,6 +513,7 @@ impl IsmpRouter for Router {
             id if id == pallet_hyperbridge::PALLET_HYPERBRIDGE_ID => {
                 Ok(Box::new(Hyperbridge::default()))
             }
+            id if HyperFungibleToken::is_module(id) => Ok(Box::new(HyperFungibleToken::default())),
             id if TokenGateway::is_token_gateway(id) => Ok(Box::new(TokenGateway::default())),
             _ => Err(anyhow!(ismp::Error::ModuleNotFound(bytes))),
         }
@@ -449,7 +538,7 @@ impl ismp_parachain::weights::WeightInfo for IsmpParachainWeightInfo {
     }
 
     fn update_parachain_consensus() -> Weight {
-        Weight::from_parts(200_000_000, 0).saturating_add(RocksDbWeight::get().reads_writes(6, 6))
+        Weight::from_parts(25_000_000, 0).saturating_add(RocksDbWeight::get().reads_writes(2, 2))
     }
 }
 
@@ -464,6 +553,7 @@ impl pallet_ismp::Config for Runtime {
     type ConsensusClients = (ismp_parachain::ParachainConsensusClient<Runtime, IsmpParachain>,);
     type OffchainDB = ();
     type FeeHandler = WeightFeeHandler<AccountId, Balances, WeightToFee, IsmpFeesPalletId, true>;
+    type MigrationWeightInfo = ();
 }
 
 impl ismp_parachain::Config for Runtime {
@@ -474,6 +564,17 @@ impl ismp_parachain::Config for Runtime {
 
 impl pallet_hyperbridge::Config for Runtime {
     type IsmpHost = Ismp;
+}
+
+impl pallet_hyper_fungible_token::Config for Runtime {
+    type Dispatcher = Hyperbridge;
+    type NativeCurrency = Balances;
+    type CreateOrigin = EnsureRoot<AccountId>;
+    type Assets = Assets;
+    type NativeAssetId = NativeAssetId;
+    type Decimals = TokenGatewayDecimals;
+    type EvmToSubstrate = ();
+    type WeightInfo = ();
 }
 
 impl pallet_token_gateway::Config for Runtime {

@@ -85,7 +85,10 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
         frame_system::CheckEra<Runtime>,
         frame_system::CheckNonce<Runtime>,
         frame_system::CheckWeight<Runtime>,
-        pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+        pallet_gas_transaction_payment::ChargeTransactionPayment<
+            Runtime,
+            pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+        >,
         frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
     ),
 >;
@@ -282,10 +285,16 @@ mod runtime {
     pub type TransactionPayment = pallet_transaction_payment;
     #[runtime::pallet_index(12)]
     pub type Assets = pallet_assets;
+    #[runtime::pallet_index(13)]
+    pub type PrepaidGas = pallet_prepaid_gas;
+    #[runtime::pallet_index(14)]
+    pub type GasTransactionPayment = pallet_gas_transaction_payment;
 
     // Governance
     #[runtime::pallet_index(15)]
     pub type Sudo = pallet_sudo;
+    #[runtime::pallet_index(16)]
+    pub type Revive = pallet_revive;
 
     // Collator support. The order of these 4 are important and shall not change.
     #[runtime::pallet_index(20)]
@@ -316,10 +325,11 @@ mod runtime {
     pub type Hyperbridge = pallet_hyperbridge;
     #[runtime::pallet_index(37)]
     pub type TokenGateway = pallet_token_gateway;
+    #[runtime::pallet_index(38)]
+    pub type HyperFungibleToken = pallet_hyper_fungible_token;
 
-    // Template
     #[runtime::pallet_index(50)]
-    pub type TemplatePallet = pallet_nulo_template;
+    pub type ExistentialSponsorship = pallet_existential_sponsorship;
 }
 
 #[docify::export(register_validate_block)]

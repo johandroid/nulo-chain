@@ -6,8 +6,15 @@ repository = "https://github.com/johandroid/nulo-chain"
 edition = "2024"
 
 [workspace]
-default-members = ["pallets/template", "runtime"]
-members = ["node", "pallets/template", "runtime"]
+default-members = ["runtime"]
+members = [
+	"node",
+	"pallets/pallet-gas-transaction-payment",
+	"pallets/pallet-hyper-fungible-token",
+	"pallets/pallet-prepaid-gas",
+	"pallets/pallet-existential-sponsorship",
+	"runtime",
+]
 resolver = "2"
 
 
@@ -51,7 +58,9 @@ zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_0
 
 [workspace.dependencies]
 nulo-chain = { path = "./runtime", default-features = false }
-pallet-nulo-template = { path = "./pallets/template", default-features = false }
+pallet-gas-transaction-payment = { path = "./pallets/pallet-gas-transaction-payment", default-features = false }
+pallet-prepaid-gas = { path = "./pallets/pallet-prepaid-gas", default-features = false }
+pallet-existential-sponsorship = { path = "./pallets/pallet-existential-sponsorship", default-features = false }
 anyhow = { version = "1.0", default-features = false }
 clap = { version = "4.5.13" }
 codec = { version = "3.7.5", default-features = false, package = "parity-scale-codec" }
@@ -60,23 +69,29 @@ docify = { version = "0.2.9" }
 futures = { version = "0.3.31" }
 jsonrpsee = { version = "0.24.10" }
 log = { version = "0.4.22", default-features = false }
-polkadot-sdk = { version = "2512.3.3", default-features = false }
+polkadot-sdk = { version = "=2512.3.2", default-features = false }
 prometheus-endpoint = { version = "0.17.7", default-features = false, package = "substrate-prometheus-endpoint" }
 serde = { version = "1.0.214", default-features = false }
 cumulus-pallet-parachain-system = { version = "0.25.0", default-features = false }
 hex-literal = { version = "0.4.1", default-features = false }
 scale-info = { version = "2.11.6", default-features = false }
 serde_json = { version = "1.0.132", default-features = false }
+thiserror = { version = "2", default-features = false }
+alloy-primitives = { version = "1.5.7", default-features = false, features = ["rlp"] }
+alloy-sol-macro = { version = "1.5.7", features = ["json"] }
+alloy-sol-types = { version = "1.5.7", default-features = false }
+primitive-types = { version = "0.13.1", default-features = false }
 smallvec = { version = "1.11.0", default-features = false }
 substrate-wasm-builder = { version = "31.1.0", default-features = false }
 frame = { version = "0.14.0", default-features = false, package = "polkadot-sdk-frame" }
 
 # Hyperbridge
 ismp = { version = "2512.0.0", default-features = false }
-pallet-ismp = { version = "2512.0.0", default-features = false }
+pallet-ismp = { version = "2512.1.0", default-features = false }
 ismp-parachain = { version = "2512.0.0", default-features = false }
 ismp-parachain-inherent = { version = "2512.0.0", default-features = false }
 ismp-parachain-runtime-api = { version = "2512.0.0", default-features = false }
+pallet-hyper-fungible-token = { path = "./pallets/pallet-hyper-fungible-token", default-features = false }
 pallet-hyperbridge = { version = "2512.0.0", default-features = false }
 pallet-ismp-rpc = { version = "2512.0.0", default-features = false }
 pallet-ismp-runtime-api = { version = "2512.0.0", default-features = false }

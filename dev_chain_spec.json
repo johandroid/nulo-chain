@@ -4,7 +4,7 @@
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": null,
-  "relay_chain": "rococo-local",
+  "relay_chain": "paseo-local",
   "protocolId": null,
   "properties": {
     "tokenDecimals": 12,
@@ -75,7 +75,7 @@
           ]
         },
         "parachainInfo": {
-          "parachainId": 1000
+          "parachainId": 5153
         },
         "polkadotXcm": {
           "safeXcmVersion": 5

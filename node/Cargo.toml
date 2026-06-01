@@ -1,6 +1,6 @@
 [package]
 name = "nulo-node"
-description = "A parachain node template built with Substrate and Cumulus, part of Polkadot Sdk."
+description = "Nulo parachain collator node built with Polkadot SDK and Cumulus."
 version = "0.1.0"
 license = "Unlicense"
 authors.workspace = true

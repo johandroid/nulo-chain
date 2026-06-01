@@ -1,0 +1,31 @@
+[package]
+name = "pallet-existential-sponsorship"
+description = "FRAME pallet for hold-based existential sponsorship."
+version = "0.1.0"
+license = "Unlicense"
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+edition.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { features = ["derive"], workspace = true }
+frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
+scale-info = { features = ["derive"], workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+polkadot-sdk = { workspace = true, default-features = true, features = ["pallet-balances"] }
+
+[features]
+default = ["std"]
+runtime-benchmarks = ["frame/runtime-benchmarks"]
+std = ["codec/std", "frame/std", "scale-info/std", "serde/std"]
+try-runtime = ["frame/try-runtime"]

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 /// The relay chain that you want to configure this parachain to connect to.
-pub const RELAY_CHAIN: &str = "rococo-local";
+pub const RELAY_CHAIN: &str = "paseo-local";
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -63,7 +63,7 @@ pub fn local_chain_spec() -> ChainSpec {
     .with_id("local_testnet")
     .with_chain_type(ChainType::Local)
     .with_genesis_config_preset_name(sc_chain_spec::LOCAL_TESTNET_RUNTIME_PRESET)
-    .with_protocol_id("template-local")
+    .with_protocol_id("nulo-local")
     .with_properties(properties)
     .build()
 }

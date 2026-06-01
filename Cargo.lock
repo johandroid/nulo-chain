@@ -333,6 +333,7 @@ version = "1.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "489f1620bb7e2483fb5819ed01ab6edc1d2f93939dce35a5695085a1afd1d699"
 dependencies = [
+ "alloy-json-abi",
  "alloy-sol-macro-input",
  "const-hex",
  "heck 0.5.0",
@@ -351,12 +352,14 @@ version = "1.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56cef806ad22d4392c5fc83cf8f2089f988eb99c7067b4e0c6f1971fc1cca318"
 dependencies = [
+ "alloy-json-abi",
  "const-hex",
  "dunce",
  "heck 0.5.0",
  "macro-string",
  "proc-macro2",
  "quote",
+ "serde_json",
  "syn 2.0.117",
  "syn-solidity",
 ]
@@ -8197,10 +8200,13 @@ dependencies = [
  "ismp-parachain",
  "ismp-parachain-runtime-api",
  "log",
+ "pallet-existential-sponsorship",
+ "pallet-gas-transaction-payment",
+ "pallet-hyper-fungible-token",
  "pallet-hyperbridge",
  "pallet-ismp",
  "pallet-ismp-runtime-api",
- "pallet-nulo-template",
+ "pallet-prepaid-gas",
  "pallet-token-gateway",
  "parity-scale-codec",
  "polkadot-sdk",
@@ -9359,6 +9365,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-existential-sponsorship"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "polkadot-sdk",
+ "polkadot-sdk-frame",
+ "scale-info",
+ "serde",
+]
+
+[[package]]
 name = "pallet-fast-unstake"
 version = "44.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9375,6 +9392,16 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-staking",
+]
+
+[[package]]
+name = "pallet-gas-transaction-payment"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "polkadot-sdk",
+ "polkadot-sdk-frame",
+ "scale-info",
 ]
 
 [[package]]
@@ -9417,6 +9444,25 @@ dependencies = [
  "sp-runtime",
  "sp-session",
  "sp-staking",
+]
+
+[[package]]
+name = "pallet-hyper-fungible-token"
+version = "2512.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-macro",
+ "alloy-sol-types",
+ "anyhow",
+ "ismp",
+ "log",
+ "pallet-ismp",
+ "parity-scale-codec",
+ "polkadot-sdk",
+ "polkadot-sdk-frame",
+ "primitive-types 0.13.1",
+ "scale-info",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -9501,9 +9547,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-ismp"
-version = "2512.0.0"
+version = "2512.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baa23f05687c2f83233437fa0fb35f205cc2169461fa24a27f90271bdf0ddef2"
+checksum = "9722a8f8f9e8a1e183ac179be6f4640d716f85e12d85c19f6485144d211e0f6d"
 dependencies = [
  "anyhow",
  "crypto-utils",
@@ -9819,15 +9865,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-nulo-template"
-version = "0.1.0"
-dependencies = [
- "parity-scale-codec",
- "polkadot-sdk-frame",
- "scale-info",
-]
-
-[[package]]
 name = "pallet-offences"
 version = "44.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9982,6 +10019,18 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-prepaid-gas"
+version = "0.1.0"
+dependencies = [
+ "pallet-gas-transaction-payment",
+ "parity-scale-codec",
+ "polkadot-sdk",
+ "polkadot-sdk-frame",
+ "scale-info",
+ "sp-weights",
 ]
 
 [[package]]
@@ -12310,9 +12359,9 @@ dependencies = [
 
 [[package]]
 name = "polkadot-sdk"
-version = "2512.3.3"
+version = "2512.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15e648c08ba7490f1085fe998d9bcbed5aab87854b394ee544903abdda845105"
+checksum = "baff6f512f1639ad9e4a08493f9ef3d03cc76f423337dc92ac1dde3eb21ce0ea"
 dependencies = [
  "asset-test-utils",
  "assets-common",
