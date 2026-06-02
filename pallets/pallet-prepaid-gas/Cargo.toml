@@ -1,6 +1,6 @@
 [package]
 name = "pallet-prepaid-gas"
-description = "Prepaid weight-credit gas tanks for feeless transactions."
+description = "Token-denominated prepaid fee credits for feeless transactions."
 version = "0.1.0"
 license = "Unlicense"
 authors.workspace = true
@@ -20,7 +20,6 @@ codec = { features = ["derive"], workspace = true }
 frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
 pallet-gas-transaction-payment = { workspace = true }
 scale-info = { features = ["derive"], workspace = true }
-sp-weights = { version = "33.2.0", default-features = false }
 
 [dev-dependencies]
 polkadot-sdk = { workspace = true, default-features = true, features = [
@@ -36,6 +35,5 @@ std = [
 	"frame/std",
 	"pallet-gas-transaction-payment/std",
 	"scale-info/std",
-	"sp-weights/std",
 ]
 try-runtime = ["frame/try-runtime", "pallet-gas-transaction-payment/try-runtime"]

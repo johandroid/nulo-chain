@@ -61,6 +61,7 @@ nulo-chain = { path = "./runtime", default-features = false }
 pallet-gas-transaction-payment = { path = "./pallets/pallet-gas-transaction-payment", default-features = false }
 pallet-prepaid-gas = { path = "./pallets/pallet-prepaid-gas", default-features = false }
 pallet-existential-sponsorship = { path = "./pallets/pallet-existential-sponsorship", default-features = false }
+pallet-transaction-payment = { version = "45.0.0", default-features = false }
 anyhow = { version = "1.0", default-features = false }
 clap = { version = "4.5.13" }
 codec = { version = "3.7.5", default-features = false, package = "parity-scale-codec" }

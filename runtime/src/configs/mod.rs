@@ -246,7 +246,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
+    type OnChargeTransaction =
+        pallet_gas_transaction_payment::PrepaidFeeAdapter<Balances, PrepaidGas, ()>;
     type WeightToFee = WeightToFee;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
@@ -256,13 +257,12 @@ impl pallet_transaction_payment::Config for Runtime {
 
 parameter_types! {
     pub const PrepaidGasPalletId: PalletId = PalletId(*b"prpgas!!");
-    pub MinPrepaidGasPurchase: Weight = ExtrinsicBaseWeight::get();
+    pub const MinPrepaidGasPurchase: Balance = 1;
 }
 
 impl pallet_prepaid_gas::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type WeightToFee = WeightToFee;
     type PalletId = PrepaidGasPalletId;
     type MinPurchase = MinPrepaidGasPurchase;
     type WeightInfo = pallet_prepaid_gas::weights::SubstrateWeight<Runtime>;
@@ -271,7 +271,6 @@ impl pallet_prepaid_gas::Config for Runtime {
 impl pallet_gas_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_gas_transaction_payment::weights::SubstrateWeight<Runtime>;
-    type GasTank = PrepaidGas;
 }
 
 impl pallet_sudo::Config for Runtime {

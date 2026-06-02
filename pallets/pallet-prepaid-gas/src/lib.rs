@@ -5,7 +5,7 @@ extern crate alloc;
 pub mod weights;
 
 use frame::prelude::*;
-use pallet_gas_transaction_payment::GasBurner;
+use pallet_gas_transaction_payment::PrepaidFee;
 
 pub use pallet::*;
 
@@ -16,13 +16,15 @@ type BalanceOf<T> =
 
 #[frame::pallet]
 pub mod pallet {
-    use super::{BalanceOf, GasBurner};
+    use super::{BalanceOf, PrepaidFee};
     use crate::weights::WeightInfo as _;
     use frame::{
-        deps::sp_runtime::traits::{AccountIdConversion, Zero},
+        deps::{
+            frame_support::transactional,
+            sp_runtime::traits::{AccountIdConversion, Zero},
+        },
         prelude::*,
     };
-    use sp_weights::WeightToFee;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -32,13 +34,11 @@ pub mod pallet {
         type Currency: frame::deps::frame_support::traits::fungible::Inspect<Self::AccountId>
             + frame::deps::frame_support::traits::fungible::Mutate<Self::AccountId>;
 
-        type WeightToFee: WeightToFee<Balance = BalanceOf<Self>>;
-
         #[pallet::constant]
         type PalletId: Get<frame::deps::frame_support::PalletId>;
 
         #[pallet::constant]
-        type MinPurchase: Get<Weight>;
+        type MinPurchase: Get<BalanceOf<Self>>;
 
         type WeightInfo: crate::weights::WeightInfo;
     }
@@ -47,43 +47,51 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
-    pub type GasCredits<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, Weight, ValueQuery>;
+    pub type PrepaidCredits<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    pub type PalletAccountInitialized<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        GasPurchased {
+        PrepaidPurchased {
             sponsor: T::AccountId,
             beneficiary: T::AccountId,
-            purchased: Weight,
-            cost: BalanceOf<T>,
-            remaining: Weight,
+            amount: BalanceOf<T>,
+            remaining: BalanceOf<T>,
         },
-        GasSpent {
+        PrepaidFeeWithdrawn {
             who: T::AccountId,
-            spent: Weight,
-            remaining: Weight,
+            amount: BalanceOf<T>,
+            remaining: BalanceOf<T>,
+        },
+        PrepaidFeeRefunded {
+            who: T::AccountId,
+            amount: BalanceOf<T>,
+            remaining: BalanceOf<T>,
         },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        GasAmountTooLow,
-        CannotPurchaseGas,
+        PurchaseAmountTooLow,
+        CannotPurchaseCredit,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::purchase())]
+        #[transactional]
         pub fn purchase(
             origin: OriginFor<T>,
             beneficiary: T::AccountId,
-            gas: Weight,
+            amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let sponsor = ensure_signed(origin)?;
-            Self::purchase_for(&sponsor, &beneficiary, gas)?;
+            Self::purchase_for(&sponsor, &beneficiary, amount)?;
             Ok(().into())
         }
     }
@@ -93,69 +101,111 @@ pub mod pallet {
             T::PalletId::get().into_account_truncating()
         }
 
-        pub fn remaining_gas(who: &T::AccountId) -> Weight {
-            GasCredits::<T>::get(who)
+        pub fn remaining_credit(who: &T::AccountId) -> BalanceOf<T> {
+            PrepaidCredits::<T>::get(who)
         }
 
+        #[transactional]
         pub fn purchase_for(
             sponsor: &T::AccountId,
             beneficiary: &T::AccountId,
-            gas: Weight,
+            amount: BalanceOf<T>,
         ) -> DispatchResult {
             ensure!(
-                gas.all_gte(T::MinPurchase::get()),
-                Error::<T>::GasAmountTooLow
+                !amount.is_zero() && amount >= T::MinPurchase::get(),
+                Error::<T>::PurchaseAmountTooLow
             );
 
-            let cost = T::WeightToFee::weight_to_fee(&gas);
-            ensure!(!cost.is_zero(), Error::<T>::GasAmountTooLow);
+            Self::ensure_pallet_account();
 
             <T::Currency as frame::deps::frame_support::traits::fungible::Mutate<_>>::transfer(
                 sponsor,
                 &Self::account_id(),
-                cost,
+                amount,
                 Preservation::Preserve,
             )
-            .map_err(|_| Error::<T>::CannotPurchaseGas)?;
+            .map_err(|_| Error::<T>::CannotPurchaseCredit)?;
 
-            let remaining = GasCredits::<T>::mutate(beneficiary, |stored| {
-                *stored = stored.saturating_add(gas);
+            let remaining = PrepaidCredits::<T>::mutate(beneficiary, |stored| {
+                *stored = stored.saturating_add(amount);
                 *stored
             });
 
-            Self::deposit_event(Event::GasPurchased {
+            Self::deposit_event(Event::PrepaidPurchased {
                 sponsor: sponsor.clone(),
                 beneficiary: beneficiary.clone(),
-                purchased: gas,
-                cost,
+                amount,
                 remaining,
             });
 
             Ok(())
         }
+
+        fn ensure_pallet_account() {
+            if !PalletAccountInitialized::<T>::get() {
+                let _ = frame_system::Pallet::<T>::inc_providers(&Self::account_id());
+                PalletAccountInitialized::<T>::put(true);
+            }
+        }
     }
 
-    impl<T: Config> GasBurner for Pallet<T> {
-        type AccountId = T::AccountId;
-
-        fn check_available_gas(who: &Self::AccountId, estimated: &Weight) -> Option<Weight> {
-            GasCredits::<T>::get(who).checked_sub(estimated)
+    impl<T: Config> PrepaidFee<T::AccountId, BalanceOf<T>> for Pallet<T> {
+        fn account_id() -> T::AccountId {
+            Pallet::<T>::account_id()
         }
 
-        fn burn_gas(who: &Self::AccountId, expected: &Weight, used: &Weight) -> Weight {
-            let remaining = GasCredits::<T>::mutate(who, |stored| {
-                let next = stored.checked_sub(used).unwrap_or_default().max(*expected);
-                *stored = next;
-                next
-            });
+        fn credit(who: &T::AccountId) -> BalanceOf<T> {
+            Pallet::<T>::remaining_credit(who)
+        }
 
-            Pallet::<T>::deposit_event(Event::GasSpent {
+        fn withdraw_credit(
+            who: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> Result<(), TransactionValidityError> {
+            if amount.is_zero() {
+                return Ok(());
+            }
+
+            let remaining = PrepaidCredits::<T>::try_mutate(
+                who,
+                |stored| -> Result<BalanceOf<T>, TransactionValidityError> {
+                    if *stored < amount {
+                        return Err(InvalidTransaction::Payment.into());
+                    }
+                    *stored = stored.saturating_sub(amount);
+                    Ok(*stored)
+                },
+            )?;
+
+            Pallet::<T>::deposit_event(Event::PrepaidFeeWithdrawn {
                 who: who.clone(),
-                spent: *used,
+                amount,
                 remaining,
             });
 
-            remaining
+            Ok(())
+        }
+
+        fn refund_credit(
+            who: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> Result<(), TransactionValidityError> {
+            if amount.is_zero() {
+                return Ok(());
+            }
+
+            let remaining = PrepaidCredits::<T>::mutate(who, |stored| {
+                *stored = stored.saturating_add(amount);
+                *stored
+            });
+
+            Pallet::<T>::deposit_event(Event::PrepaidFeeRefunded {
+                who: who.clone(),
+                amount,
+                remaining,
+            });
+
+            Ok(())
         }
     }
 }
@@ -168,6 +218,7 @@ mod tests {
         deps::frame_support::{PalletId, derive_impl},
         testing_prelude::*,
     };
+    use pallet_gas_transaction_payment::PrepaidFee;
     use polkadot_sdk::*;
 
     #[frame_construct_runtime]
@@ -208,13 +259,12 @@ mod tests {
 
     parameter_types! {
         pub const GasPalletId: PalletId = PalletId(*b"py/gas!!");
-        pub const MinPurchase: Weight = Weight::from_parts(1, 0);
+        pub const MinPurchase: Balance = 1;
     }
 
     impl Config for Test {
         type RuntimeEvent = RuntimeEvent;
         type Currency = Balances;
-        type WeightToFee = FixedFee<2, Balance>;
         type PalletId = GasPalletId;
         type MinPurchase = MinPurchase;
         type WeightInfo = ();
@@ -241,57 +291,50 @@ mod tests {
     }
 
     #[test]
-    fn purchase_converts_native_balance_into_weight_credit() {
+    fn purchase_locks_native_balance_as_prepaid_credit() {
         new_test_ext().execute_with(|| {
             assert_ok!(PrepaidGas::purchase(
                 RuntimeOrigin::signed(SPONSOR),
                 BENEFICIARY,
-                Weight::from_parts(5, 0),
+                5,
             ));
 
-            assert_eq!(
-                PrepaidGas::remaining_gas(&BENEFICIARY),
-                Weight::from_parts(5, 0)
-            );
-            assert_eq!(Balances::free_balance(SPONSOR), 98);
-            assert_eq!(Balances::free_balance(PrepaidGas::account_id()), 2);
+            assert_eq!(PrepaidGas::remaining_credit(&BENEFICIARY), 5);
+            assert_eq!(Balances::free_balance(SPONSOR), 95);
+            assert_eq!(Balances::free_balance(PrepaidGas::account_id()), 5);
         });
     }
 
     #[test]
-    fn burner_consumes_only_used_weight() {
+    fn prepaid_fee_withdrawal_and_refund_update_credit_only() {
         new_test_ext().execute_with(|| {
             assert_ok!(PrepaidGas::purchase(
                 RuntimeOrigin::signed(SPONSOR),
                 BENEFICIARY,
-                Weight::from_parts(5, 0),
+                5,
             ));
 
-            let leftover = <PrepaidGas as GasBurner>::check_available_gas(
+            assert_ok!(<PrepaidGas as PrepaidFee<_, _>>::withdraw_credit(
                 &BENEFICIARY,
-                &Weight::from_parts(4, 0),
-            )
-            .expect("gas exists");
-            let remaining = <PrepaidGas as GasBurner>::burn_gas(
-                &BENEFICIARY,
-                &leftover,
-                &Weight::from_parts(3, 0),
-            );
+                4,
+            ));
+            assert_eq!(PrepaidGas::remaining_credit(&BENEFICIARY), 1);
 
-            assert_eq!(remaining, Weight::from_parts(2, 0));
-            assert_eq!(
-                PrepaidGas::remaining_gas(&BENEFICIARY),
-                Weight::from_parts(2, 0)
-            );
+            assert_ok!(<PrepaidGas as PrepaidFee<_, _>>::refund_credit(
+                &BENEFICIARY,
+                2,
+            ));
+            assert_eq!(PrepaidGas::remaining_credit(&BENEFICIARY), 3);
+            assert_eq!(Balances::free_balance(BENEFICIARY), 0);
         });
     }
 
     #[test]
-    fn rejects_purchase_below_minimum() {
+    fn rejects_zero_purchase() {
         new_test_ext().execute_with(|| {
             assert_noop!(
-                PrepaidGas::purchase(RuntimeOrigin::signed(SPONSOR), BENEFICIARY, Weight::zero(),),
-                Error::<Test>::GasAmountTooLow
+                PrepaidGas::purchase(RuntimeOrigin::signed(SPONSOR), BENEFICIARY, 0,),
+                Error::<Test>::PurchaseAmountTooLow
             );
         });
     }

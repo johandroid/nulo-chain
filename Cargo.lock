@@ -9398,6 +9398,7 @@ dependencies = [
 name = "pallet-gas-transaction-payment"
 version = "0.1.0"
 dependencies = [
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "polkadot-sdk",
  "polkadot-sdk-frame",
@@ -10030,7 +10031,6 @@ dependencies = [
  "polkadot-sdk",
  "polkadot-sdk-frame",
  "scale-info",
- "sp-weights",
 ]
 
 [[package]]
