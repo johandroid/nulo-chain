@@ -1,29 +1,97 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Workspace Structure
 
-This repository is a Rust workspace with `runtime/` for parachain logic, custom pallets under `pallets/`, and `node/` for the optional `nulo-node` binary. Runtime code lives in `runtime/src/`, with configuration grouped under `runtime/src/configs/` and generated weights under `runtime/src/weights/`. Chain specs sit at the repo root (`chain_spec.json`, `dev_chain_spec.json`, `raw_chain_spec.json`). Local runtime testing uses `polkadot-omni-node`.
+This is a Rust workspace with:
+- `runtime/`: parachain runtime (`nulo-chain`)
+- `node/`: native collator binary (`nulo-node`)
+- `pallets/`: custom FRAME pallets
+- Chain specs at repo root (`chain_spec.json`, `dev_chain_spec.json`, `raw_chain_spec.json`)
 
-## Build, Test, and Development Commands
+Use `SKIP_WASM_BUILD=1` to skip WASM builds for local iteration.
 
-Use the same commands the CI pipeline uses:
+## Commands
 
-- `cargo build --profile production` builds the runtime for release-style local work.
-- `cargo build --workspace --all-features --locked --profile production` builds every workspace member, including `node/`.
-- `SKIP_WASM_BUILD=1 cargo test` runs the fast local test suite.
-- `SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features --locked --workspace --quiet` runs lint checks.
-- `cargo install --path node --locked` installs the local node binary.
-- `chain-spec-builder -c chain_spec.json create -t development --relay-chain paseo --para-id 5153 --runtime ./target/release/wbuild/nulo-chain/nulo_chain.compact.compressed.wasm named-preset development` generates the local Omni Node chain spec.
-- `polkadot-omni-node --chain ./chain_spec.json --dev --dev-block-time 1000` starts the local runtime test node.
+**Build:**
+```sh
+cargo build --profile production                      # runtime only
+cargo build --workspace --all-features --locked --profile production  # full workspace including node
+cargo install --path node --locked                     # install nulo-node
+```
 
-## Coding Style & Naming Conventions
+**Test:**
+```sh
+SKIP_WASM_BUILD=1 cargo test                          # full test suite
+cargo test -p <pallet>                                # pallet-specific tests
+SKIP_PALLET_REVIVE_FIXTURES=1 SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features --locked --workspace --quiet
+```
 
-The workspace uses Rust 2024 edition and workspace-level lints defined in [`Cargo.toml`](/home/clara/Documents/nulo/sw/nulo-chain/Cargo.toml). Format with `cargo fmt` before opening a PR. Follow standard Rust naming: modules and files in `snake_case`, types and traits in `UpperCamelCase`, constants in `ALL_CAPS`, and crates in `kebab-case` such as `nulo-chain` and `pallet-prepaid-gas`. Keep runtime wiring in `runtime/src/lib.rs`, and place pallet test scaffolding next to pallet code in `mock.rs` and `tests.rs`.
+**Chain specs:** Build runtime first, then regenerate specs after pallet changes.
 
-## Testing Guidelines
+## CI Commands
 
-Unit tests use Rust `#[test]` plus FRAME test helpers from `frame::testing_prelude`. Prefer behavior-focused test names. Run focused pallet tests with commands such as `cargo test -p pallet-prepaid-gas`, `cargo test -p pallet-gas-transaction-payment`, `cargo test -p pallet-existential-sponsorship`, or `cargo test -p pallet-hyper-fungible-token`. There is no explicit coverage gate in CI, but runtime and chain-spec changes should include an Omni Node dev run.
+Use the exact CI commands for local verification:
+- Clippy: `SKIP_PALLET_REVIVE_FIXTURES=1 SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features --locked --workspace --quiet`
+- Tests: `SKIP_WASM_BUILD=1 cargo test`
+- Docs: `SKIP_WASM_BUILD=1 cargo doc --workspace --no-deps`
 
-## Commit & Pull Request Guidelines
+## Lint Configuration
 
-Recent history uses short, imperative commit subjects (`Fixing typos and id`, `First approach to include hyperbridge`). Keep subjects brief, specific, and action-oriented. PRs should summarize runtime or node impact, link the relevant issue when one exists, and list the commands you ran locally. If a change affects chain specs, parachain ID assumptions, or local network behavior, call that out explicitly in the PR description.
+Workspace lints are defined in `Cargo.toml`. Notable allowances:
+- `complexity=warn`, `correctness=warn`
+- Disabled: `all`, `suspicious_double_ref_op`, `bind_instead_of_map`, `borrowed-box`
+- Allow `eq_op` in tests, `default_constructed_unit_structs`, `needless-lifetimes` (generated code)
+
+## Pallet Tests
+
+Run pallet tests with `cargo test -p <pallet>`:
+- `pallet-prepaid-gas`
+- `pallet-gas-transaction-payment`
+- `pallet-existential-sponsorship`
+- `pallet-hyper-fungible-token`
+- `pallet-ismp-rpc`
+
+## Commit & PR Guidelines
+
+- Use short, imperative subjects: `Fix typo in pallet-name`
+- Link issues when creating PRs
+- PR descriptions should note runtime/node impact or chain spec changes
+- Regenerate chain specs after pallet removals or index changes
+
+## Local Development
+
+```sh
+polkadot-omni-node --chain ./chain_spec.json --dev --dev-block-time 1000 --rpc-port 9944
+```
+
+Default Omni dev endpoint: `ws://127.0.0.1:9944`
+
+## Workspace Members
+
+```toml
+runtime
+node
+pallets/pallet-prepaid-gas
+pallets/pallet-gas-transaction-payment
+pallets/pallet-existential-sponsorship
+pallets/pallet-hyper-fungible-token
+```
+
+## Runtime Wiring
+
+Keep runtime wiring in `runtime/src/lib.rs`. Pallet test scaffolding goes in `mock.rs` or `tests.rs` next to pallets.
+
+## ZKP Revive/Web Example
+
+- `examples/zkp-revive/` is the Noir/Barretenberg Solidity verifier example for `pallet-revive`.
+- `web/` is the browser tester. It should submit calls with Polkadot extension accounts through `api.tx.revive.call`.
+- Frontend/example work must not modify `runtime/`, `node/`, or pallets unless the user explicitly asks for runtime behavior changes.
+- Build proofs and contracts with `cd examples/zkp-revive && source /home/clara/.hyde.zshrc && npm run build`.
+- Deploy to the current local node with `REVIVE_REF_TIME=500000000000 WS=ws://127.0.0.1:39944 npm run deploy`.
+- Sync browser artifacts with `cd web && npm run sync:artifacts` after rebuilding proofs or contracts.
+
+## Notes
+
+- `pallet-template` removed from runtime and workspace
+- `data/` is local node state, not source code
+- Para ID: `5153`, Relay chain: `paseo`

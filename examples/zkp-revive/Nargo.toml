@@ -1,0 +1,7 @@
+[package]
+name = "balance_proof"
+type = "bin"
+authors = ["Nulo"]
+compiler_version = ">=1.0.0"
+
+[dependencies]

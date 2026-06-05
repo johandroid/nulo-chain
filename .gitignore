@@ -2,3 +2,17 @@ target/
 chain_spec.json
 dev_chain_spec.json
 data
+
+# JavaScript dependencies and package-manager logs.
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Frontend build output and copied generated artifacts.
+web/dist/
+web/public/artifacts/
+
+# ZKP example generated outputs.
+examples/zkp-revive/target/

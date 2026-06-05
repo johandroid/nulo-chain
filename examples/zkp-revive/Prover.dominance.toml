@@ -1,0 +1,11 @@
+# Feature 1:
+# Prove account_balance > other_balance without revealing either balance.
+proof_kind = "0"
+threshold = "0"
+
+# Private witness values.
+account_balance = "120"
+account_salt = "111"
+other_balance = "80"
+other_salt = "222"
+
